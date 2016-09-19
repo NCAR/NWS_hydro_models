@@ -1,0 +1,1 @@
+awk '{if(NR<4){print}else{print $1,$2,$3,$4,$6,$9,$10,5.5-((6.5-$2*1)^2)^0.5}}' 09081600_lump_cida_forcing_leap.txt > 09081600_lump_cida_forcing.pet.txt 

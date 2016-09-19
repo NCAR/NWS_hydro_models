@@ -1,0 +1,10 @@
+LAST
+ * got the converted model to run
+NEXT 
+ * compare with prior distributed version
+
+NOTES: 
+ * pgfortran is twice as fast as the gfortran compiler
+ * almost no small differences after 46 yr run -- mainly in combined file due ot 
+   different precision on areas
+

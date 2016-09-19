@@ -1,0 +1,2 @@
+state file output contains states for all days in the run, arranges one row per day
+state file input contains only one day's values, arranged in a column

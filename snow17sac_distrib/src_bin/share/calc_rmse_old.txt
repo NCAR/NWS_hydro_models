@@ -1,0 +1,60 @@
+!cccccccccccccccccccccccccc
+
+subroutine calc_rmse(model,streamflow,mean_obs,rmse)
+
+  implicit none
+
+!input variables
+  real, dimension(:),     intent(in)  :: model
+  real, dimension(:),     intent(in)  :: streamflow
+  real,                   intent(in)  :: mean_obs
+
+
+!output variables
+  real,			  intent(out) :: rmse
+
+
+!local variables
+  integer :: i,end_pt,ll
+  double precision :: sum_sqr,sum_obs
+  
+!!! code
+
+
+  sum_sqr = 0.0
+  end_pt = sim_len
+
+  if(val_period .eq. 0)then
+    ll = sim_len
+  else
+    ll = val_length
+  endif
+
+
+  if(trim(metric) .eq. "rmse" .or. trim(metric) .eq. "RMSE") then
+!    do i = start_calib,end_pt
+     do i = 1,ll
+      sum_sqr = sum_sqr + (model(i)-streamflow(i))**2
+    enddo
+    rmse = sqrt(sum_sqr/(real(ll)))
+  elseif(trim(metric) .eq. "mse" .or. trim(metric) .eq. "MSE") then
+!    do i = start_calib,end_pt
+     do i = 1,ll
+      sum_sqr = sum_sqr + (model(i)-streamflow(i))**2
+    enddo
+    rmse = sum_sqr/(real(ll))
+  elseif(trim(metric) .eq. "nse" .or. trim(metric) .eq. "NSE") then
+!    do i = start_calib,end_pt
+     do i = 1,ll
+      sum_sqr = sum_sqr + (model(i)-streamflow(i))**2
+      sum_obs = sum_obs + (streamflow(i)-mean_obs)**2
+    enddo
+      rmse = -1*(1.0 - sum_sqr/sum_obs)
+  endif
+
+  return
+end subroutine
+
+!cccccccccccccccccccccccccc
+
+!ccccccccccccccccccccccccccccccccc

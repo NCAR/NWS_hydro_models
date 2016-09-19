@@ -1,0 +1,3 @@
+2 "../output/wbvars.09081600.txt"
+"./namelist.model1"
+"./namelist.model2"
