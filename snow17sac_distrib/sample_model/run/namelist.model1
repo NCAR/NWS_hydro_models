@@ -1,0 +1,40 @@
+&INIT_CONTROL
+forcing_name      = "../input/forcings/09081600_lump_cida_forcing.pet.txt"
+stream_name       = "../input/misc/09081600_streamflow_1980_leap.txt"
+model_out         = "../output/wbvars.09081600-1.txt"
+sac_param_file    = "../input/params/sac_params.09081600.txt"
+snow17_param_file = "../input/params/snow17_params.09081600.txt"
+uhp_param_file    = "../input/params/uhp_params.09081600.txt"
+
+gage_id = "HHWM8IL"	! basin or gage id (not used)
+dt      = 86400		! model time step in seconds (86400 = 1 day)
+
+start_year  = 1980
+start_month = 10
+start_day   = 1
+end_year    = 2010
+end_month   = 9
+end_day     = 30
+
+in_swe     = 0.0	! initial swe in mm if not performing a restart run
+in_uztwc   = 200.	! initial uztwc in mm if not performing a restart run
+in_uzfwc   = 200.	! initial uzfwc in mm if not performing a restart run
+in_lztwc   = 200.	! initial lztwc in mm if not performing a restart run
+in_lzfsc   = 200.	! initial lzfsc in mm if not performing a restart run
+in_lzfpc   = 200.	! initial lzfpc in mm if not performing a restart run
+in_adimc   = 200.	! initial adimc in mm if not performing a restart run
+
+! restart flags
+write_restart = 0	! write restart files.  necessary to have to perform a restart run.
+restart_run   = 0	! is this run a restart run? no=0 yes=1
+
+! only needed if write_restart = 1
+snow17_state_out_file  = "./restart_snow17_09081600_1999_0712b.txt"	! snow17 output state file
+sac_state_out_file = "./restart_sac_09081600_1999_0712b.txt"		! sac-sma output state file
+uh_state_out_file = "./restart_uh_09081600_1999_0712b.txt"		! UH output state file
+
+! only needed if restart_run = 1
+sac_state_in_file    = "./restart_sac_09081600_1999_0627.txt"		! snow17 input state file
+snow17_state_in_file = "./restart_snow17_09081600_1999_0627.txt"	! sac-sma input state file
+uh_state_in_file     = "./restart_uh_09081600_1999_0627.txt"		! unit hydrograph input state file
+/
