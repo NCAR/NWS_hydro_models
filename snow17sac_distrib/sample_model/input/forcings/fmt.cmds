@@ -1,0 +1,4 @@
+# need fixed format for snowsac code
+
+awk '{if(NR<5){print}else{printf("%4d %02d %02d %02d%10.2f%10.2f%10.2f%10.2f\n",$1,$2,$3,$4,$5,$6,$7,$8)}}' 09081600_lump_cida_forcing.pet.txt > t 
+mv t 09081600_lump_cida_forcing.pet.txt

@@ -1,0 +1,7 @@
+Compile model by running 'make' in driver/ directory
+
+AWW: modified:  minor code changes to allow compilation with gfortran
+AWW: modified:  code changes to use external PET
+AWW: Jan16 modified:  runs multiple models in loop and combines outputs (weighted areal average)
+   
+

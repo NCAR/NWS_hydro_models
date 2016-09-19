@@ -1,0 +1,14 @@
+This is a simple model example using the Crystal River nr Redstone, CO
+with the Snow17/Sacramento snow and soil moisture accounting models, respectively. 
+
+The subdirs here contain:
+
+  src_bin/	 source code and compiled executable
+
+  sample_model/  a sample model for testing the code, containing:
+    run/ 	 small script to run the model, and namelist (control) file
+    input/  	 parameter files and forcings, and obs flows if available
+    output/  	 output simulation results from the run
+    state/  	 model state files for re-initialization
+
+AWW-20160118
