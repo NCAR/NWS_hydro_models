@@ -24,6 +24,10 @@
 !                 - streamflow read/write functionality removed
 !                 - improved messaging about run details
 ! 
+!   AWW-20161111: - changed the way state files are read - now can read the row format output
+!                   of the write_state functions, and will seek a date that is one day before
+!                   the starting day of the run, since that contains end-of-day state values
+! 
 ! ====================================================================================
 
 program multi_driver
@@ -36,7 +40,7 @@ program multi_driver
                          read_areal_forcing, &
 			 julian_day,write_snow17_state,write_sac_state, &
 			 read_sac_state,read_snow17_state,read_uh_state, &
-			 write_uh_state, date_diff_ndays
+			 write_uh_state, date_diff_ndays, day_before_date
   implicit none
 
   ! local variables
@@ -44,6 +48,7 @@ program multi_driver
   character(len=2000)	:: namelist_name  !command line arg for namelist file
   character(len=2000)	:: combined_output_filename  ! AWW constructed on the fly
   character(len=2000)	:: hru_output_filename  ! AWW constructed on the fly
+  character(len=10)	:: state_date_str  ! AWW string to match date in input states
 
   integer(I4B) :: dt           ! model timestep (seconds)
                                ! moved here from namelist until model can be validated at 
@@ -104,7 +109,8 @@ program multi_driver
   real(sp), dimension(:),allocatable    :: sneqv_comb ! AWW ditto, combined vars
 
   ! date variables
-  integer, dimension(:),allocatable :: year,month,day,hour
+  integer, dimension(:),allocatable :: year, month, day, hour
+  integer(I4B)                      :: state_year, state_month, state_day
 
   ! precip/snowmelt inputs to Sac from Snow17
   real(sp),dimension(:),allocatable :: raim
@@ -240,10 +246,15 @@ program multi_driver
       ! we *ARE* warm starting from a state file
       ! read in external state files and overwrites namelist state variables 
 
-      ! states are pre-processed to just hold one records values (in a column) from the output state files
-      call read_snow17_state(cs,tprev,hru_id(nh))
-      call read_sac_state(uztwc_sp,uzfwc_sp,lztwc_sp,lzfsc_sp,lzfpc_sp,adimc_sp,hru_id(nh))
-      call read_uh_state(prior_tci,uh_length,hru_id(nh))
+      ! starting state files must match format of state file outputs (date then vars)
+      !   state read routines look for state from one day before the start date of run
+      call day_before_date(start_year,start_month,start_day,state_year,state_month,state_day)
+      ! create string that will be matched in state file
+      write(state_date_str,'(I0.4,I0.2,I0.2,I0.2)') state_year,state_month,state_day,hour(1)
+  
+      call read_snow17_state(state_date_str,cs,tprev,hru_id(nh))
+      call read_sac_state(state_date_str,uztwc_sp,uzfwc_sp,lztwc_sp,lzfsc_sp,lzfpc_sp,adimc_sp,hru_id(nh))
+      call read_uh_state(state_date_str,prior_tci,uh_length,hru_id(nh))
     endif
   
     ! =============== START SIMULATION TIME LOOP =====================================
