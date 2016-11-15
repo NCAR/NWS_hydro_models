@@ -1,7 +1,9 @@
 LAST
  * got the converted model to run
+ * streamlined the state file functionality
+
 NEXT 
- * compare with prior distributed version
+ * still need to check on that tprev error
 
 NOTES: 
  * pgfortran is twice as fast as the gfortran compiler

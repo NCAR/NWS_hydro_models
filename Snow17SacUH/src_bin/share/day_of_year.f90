@@ -1,4 +1,5 @@
 ! The two Julian day routines are from G. Liston's SnowModel, but updated to F90
+! A. Wood 2016 added two date math routines
 
 subroutine julian_day(year,month,day,jday)
 ! returns vector
@@ -31,7 +32,7 @@ subroutine julian_day(year,month,day,jday)
           + min(1,max(0,month-12))*31
 
   return
-end subroutine
+end subroutine julian_day
 
 !ccccccccccccccccccccccccccccccccc
 
@@ -64,7 +65,7 @@ subroutine julianday_scalar(iyear,imonth,iday,jday_scalar)
           + min(1,max(0,imonth-12))*31
 
   return
-end subroutine
+end subroutine julianday_scalar
 
 ! AWW-2016: added date difference function
 ! allows for date 2 to be before date 1 (neg days)
@@ -125,4 +126,51 @@ subroutine date_diff_ndays( yr1, mo1, dy1, yr2, mo2, dy2, nday_diff )
 end subroutine date_diff_ndays
 
 
+! AWW-2016: subtract one day from a date and return new date
+!   specific for finding state file date from starting date
+subroutine day_before_date(year,month,day,newyear,newmonth,newday)
+  use nrtype
+  implicit none
 
+  ! input variables
+  integer(I4B),intent(in)  :: year       ! starting date
+  integer(I4B),intent(in)  :: month
+  integer(I4B),intent(in)  :: day
+
+  ! output variables
+  integer(I4B),intent(out)  :: newyear   ! ending date
+  integer(I4B),intent(out)  :: newmonth
+  integer(I4B),intent(out)  :: newday
+
+  ! set starting date
+  newyear  = year
+  newmonth = month
+  newday   = day
+
+  ! Calculate the date one day before the current date
+  if(day==1 .and. month==1) then
+    ! shift to last day of prior year
+    newyear  = year-1
+    newmonth = 12
+    newday   = 31
+  else if(day == 1) then
+    ! shift to last day of prior month
+    newmonth = month-1 
+    ! and that last day is ...
+    if(newmonth == 4 .or. newmonth == 6 .or. newmonth == 9 .or. newmonth == 11) then
+      newday = 30
+    else if(newmonth == 2) then
+      newday = 28
+      if (mod(newyear,4)   == 0) newday = 29
+      if (mod(newyear,100) == 0) newday = 28
+      if (mod(newyear,400) == 0) newday = 29
+    else
+      newday = 31
+    endif
+  else 
+    ! just shift to prior day within month
+    newday = day-1  
+  endif
+
+  return
+end subroutine day_before_date

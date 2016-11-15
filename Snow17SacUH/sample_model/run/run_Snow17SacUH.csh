@@ -6,7 +6,7 @@
 #
 # To run the snow17/sac model, just execute this script (or command below)
 
- ../../src_bin/snow17sacUH.exe namelist.HHWM8
+ ../../src_bin/Snow17SacUH.exe namelist.HHWM8
 
 # -------------------------------------
 # the control file format is:

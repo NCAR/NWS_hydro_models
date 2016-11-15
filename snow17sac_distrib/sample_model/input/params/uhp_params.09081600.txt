@@ -1,3 +1,0 @@
-unit_shape	1.068000
-unit_scale	1.633000
-pet_coef	1.634000
