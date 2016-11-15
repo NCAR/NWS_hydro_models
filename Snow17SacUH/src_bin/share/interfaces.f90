@@ -32,6 +32,18 @@ module interfaces
       integer(I4B),intent(out) :: nday_diff
     end subroutine date_diff_ndays
 
+    subroutine day_before_date(year, month, day, newyear, newmonth, newday)
+      use nrtype
+      ! input variables
+      integer(I4B),intent(in)  :: year       ! starting date
+      integer(I4B),intent(in)  :: month
+      integer(I4B),intent(in)  :: day
+      ! output variables
+      integer(I4B),intent(out)  :: newyear   ! ending date
+      integer(I4B),intent(out)  :: newmonth
+      integer(I4B),intent(out)  :: newday
+    end subroutine day_before_date   
+
     subroutine read_namelist(namelist_name)
       use nrtype
       !input variable
@@ -98,21 +110,23 @@ module interfaces
       real(sp),allocatable,dimension(:)	:: out_tci  ! holds tci except for 1st uh_length records
     end subroutine write_uh_state
 
-    subroutine read_snow17_state(cs,tprev,curr_hru_id)
+    subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
       use nrtype
       use def_namelists, only: snow_state_in_root
       ! input variables
-      character(len = 20), intent(in) 		:: curr_hru_id	! HRU extension for snow state filename
+      character(len = 10), intent(in) :: state_date_str  ! AWW string to match date in input states
+      character(len = 20), intent(in) :: curr_hru_id	! HRU extension for snow state filename
       ! output variables
       real(sp), intent(out) 			:: tprev	! carry over variable
       real(sp), dimension(:), intent(out)	:: cs		! carry over snow var array
     end subroutine read_snow17_state
 
-    subroutine read_sac_state(uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
+    subroutine read_sac_state(state_date_str, uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
       use nrtype
       use def_namelists, only: sac_state_in_root
       !input variables
-      character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
+      character(len = 10), intent(in) :: state_date_str  ! AWW string to match date in input states
+      character(len = 20), intent(in) :: curr_hru_id	! HRU extension for state fname
       real(sp), intent(out)	:: uztwc		!state variable
       real(sp), intent(out)	:: uzfwc		!state array
       real(sp), intent(out)	:: lztwc		!state array
@@ -121,12 +135,13 @@ module interfaces
       real(sp), intent(out)	:: adimc		!state array
     end subroutine read_sac_state
 
-    subroutine read_uh_state(prior_tci,uh_length,curr_hru_id)
+    subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
       use nrtype
       use def_namelists, only: uh_state_in_root
       implicit none
       !input variables
-      character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
+      character(len = 10), intent(in) :: state_date_str  ! AWW string to match date in input states
+      character(len = 20), intent(in) :: curr_hru_id	! HRU extension for state fname
       integer(I4B), intent(in)	:: uh_length
       !output variables
       real(sp), dimension(:), intent(out) 	:: prior_tci

@@ -17,7 +17,7 @@ subroutine write_snow17_state(year,month,day,hour,cs,tprev,sim_length,curr_hru_i
 
   !local variables
   integer(I4B)	:: i
-  character(len = 420) :: state_outfile
+  character(len = 480) :: state_outfile
 
   ! make state input filename
   state_outfile = trim(snow_state_out_root) // trim(curr_hru_id)
@@ -25,11 +25,11 @@ subroutine write_snow17_state(year,month,day,hour,cs,tprev,sim_length,curr_hru_i
   open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
   print*, 'Writing snow state file: ', trim(state_outfile)
 
-  41 FORMAT(I4.4, 3(I2.2), 20(F20.12))  ! big enough to separate fields
+  41 FORMAT(I0.4, 3(I0.2), 20(F20.12))  ! big enough to separate fields
   do i = 1,sim_length
     ! print*, 'tprev = ',tprev(i)  AWW debugging
 
-    write(95,41) year(i),month(i),day(i),hour(i),cs(:,i),tprev(i)
+    write(95,41) year(i),month(i),day(i),hour(i),tprev(i), cs(:,i)
   enddo
 
   close(unit=95)
@@ -60,12 +60,12 @@ subroutine write_sac_state(year,month,day,hour,uztwc,uzfwc,lztwc,lzfsc,lzfpc,adi
 
   !local variables
   integer(I4B)	:: i
-  character(len = 420) :: state_outfile
+  character(len = 480) :: state_outfile
 
   ! make state input filename
   state_outfile = trim(sac_state_out_root) // trim(curr_hru_id)
 
-  42 FORMAT(I4.4, 3(I2.2), 6(F20.12))  ! big enough to separate fields
+  42 FORMAT(I0.4, 3(I0.2), 6(F20.12))  ! big enough to separate fields
   open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
   print*, 'Writing sac state file: ', trim(state_outfile)
 
@@ -103,7 +103,7 @@ subroutine write_uh_state(year,month,day,hour,tci,sim_length,uh_length,curr_hru_
   !local variables
   integer(I4B)	:: i
   real(sp),allocatable,dimension(:)	:: out_tci  ! holds tci except for 1st uh_length records
-  character(len = 420) :: state_outfile
+  character(len = 480) :: state_outfile
 
   ! make state input filename
   state_outfile = trim(uh_state_out_root) // trim(curr_hru_id)
@@ -113,7 +113,7 @@ subroutine write_uh_state(year,month,day,hour,tci,sim_length,uh_length,curr_hru_
   out_tci(1:uh_length-1) = 0.0
   out_tci(uh_length:sim_length+uh_length-1) = tci
 
-  44 FORMAT(I4.4, 3(I2.2), 1000(F20.12))  ! big enough to separate fields
+  44 FORMAT(I0.4, 3(I0.2), 1000(F20.12))  ! big enough to separate fields
   open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
   print*, 'Writing UH state file: ', trim(state_outfile)
   print*, ' '
@@ -134,7 +134,7 @@ end subroutine write_uh_state
 
 ! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
 
-subroutine read_uh_state(prior_tci,uh_length,curr_hru_id)
+subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
   ! A.Wood, 2016 -- just read prior uh_length + current value for tci
   !   Could read whole output state timeseries if date given to select current init,
   !   but for now let's keep that as a pre-process
@@ -144,76 +144,107 @@ subroutine read_uh_state(prior_tci,uh_length,curr_hru_id)
   implicit none
 
   !input variable
-  character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
+  character(len=10), intent(in) :: state_date_str  ! AWW string to match date in input states
+  character(len=20), intent(in) :: curr_hru_id	! HRU extension for state fname
   integer(I4B), intent(in)	:: uh_length
 
   !output variables
   real(sp), dimension(:), intent(out) 	:: prior_tci
 
   !local variables
-  integer(I4B)	:: i
-  character(len = 420) :: state_infile
+  integer(I4B)	       :: ios=0
+  character(len = 480) :: state_infile
+  character(len = 10)  :: file_state_date_str
 
   ! make state input filename
   state_infile = trim(uh_state_in_root) // trim(curr_hru_id)
-
-  print*, 'Reading UH state file: ', trim(state_infile)
-  print*, ' '
   open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
+  print*, 'Reading UH state file: ', trim(state_infile)
 
-  ! format for input is one column, with no other information
-  do i = 1,uh_length
-    read(95,*) prior_tci(i)
-  enddo
+  ! format for input is an unknown number of rows with uh_length+1 columns
+  !   the first column is the datestring, with no other information
+  do while(ios .ge. 0)
 
+    ! read each row and check to see if the date matches the initial state date
+    read (95,*,IOSTAT=ios) file_state_date_str, prior_tci(:)
+
+    if(file_state_date_str == state_date_str) then
+      print *, '  -- found initial UH state on ', state_date_str
+      print*, ' '
+      close(unit=95)
+      return
+    end if
+
+  end do
   close(unit=95)
 
-  return
+  ! if you reach here without returning, quit -- the initial state date was not found
+  print*, 'ERROR:  UH init state not found in UH initial state file.  Looking for: ',state_date_str
+  print*, '  -- last state read was: ', file_state_date_str
+  print*, 'Stopping.  Check inputs!'
+  stop
+
 end subroutine read_uh_state
 
 ! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
 
-subroutine read_snow17_state(cs,tprev,curr_hru_id)
+subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
   use nrtype
   use def_namelists, only: snow_state_in_root
   implicit none
 
   ! input variables
+  character(len=10),intent(in)	:: state_date_str  ! AWW string to match date in input states
   character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for snow state fname
 
   ! output variables
-  real(sp), intent(out) 		:: tprev		! carry over variable
-  real(sp), dimension(:), intent(out)	:: cs			! carry over array
+  real(sp), intent(out) 		:: tprev	! carry over variable
+  real(sp), dimension(:), intent(out)	:: cs		! carry over array
 
   !local variables
-  integer(I4B)	:: i
-  character(len = 420) :: state_infile
+  integer(I4B)	       :: ios=0
+  character(len = 480) :: state_infile
+  character(len = 10)  :: file_state_date_str
 
   ! make state filename
   state_infile = trim(snow_state_in_root) // trim(curr_hru_id)
-
-  print*, 'Reading snow state file: ', trim(state_infile)
   open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
+  print*, 'Reading snow state file: ', trim(state_infile)
 
-  ! format for input is one column, with no other information
-  do i = 1,19
-    read(95,*) cs(i)
-  enddo
-  read(95,*) tprev
+  ! format for input is an unknown number of rows with 20 data columns (1 tprev, 19 for cs)
+  !   the first column is the datestring
+  do while(ios .ge. 0)
+
+    ! read each row and check to see if the date matches the initial state date
+    read(95,*,IOSTAT=ios) file_state_date_str, tprev, cs(:)
+
+    if(file_state_date_str == state_date_str) then
+      print *, '  -- found initial snow state on ', state_date_str
+      close(unit=95)
+      return
+    end if
+
+  end do
   close(unit=95)
 
-  return
+  ! if you reach here without returning, quit -- the initial state date was not found
+  print*, 'ERROR:  snow init state not found in snow initial state file.  Looking for: ',state_date_str
+  print*, '  -- last state read was: ', file_state_date_str
+  print*, 'Stopping.  Check inputs!'
+  stop
+
 end subroutine read_snow17_state
 
 ! ccccccccccccccccccccccccccccccc
 
-subroutine read_sac_state(uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
+subroutine read_sac_state(state_date_str, uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
   use nrtype
   use def_namelists, only: sac_state_in_root
   implicit none
 
   ! input variables
-  character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for sac state fname
+  character(len=10), intent(in)	:: state_date_str  ! AWW string to match date in input states
+  character(len=20), intent(in) :: curr_hru_id	! HRU extension for sac state fname
   real(sp), intent(out)	:: uztwc			!state variable
   real(sp), intent(out)	:: uzfwc			!state array
   real(sp), intent(out)	:: lztwc			!state array
@@ -222,25 +253,37 @@ subroutine read_sac_state(uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
   real(sp), intent(out)	:: adimc
 
   ! local variables
-  character(len = 420) :: state_infile
+  integer(I4B)	       :: ios=0
+  character(len = 480) :: state_infile
+  character(len = 10)  :: file_state_date_str
 
   ! make state filename
   state_infile = trim(sac_state_in_root) // trim(curr_hru_id)	
-
+  open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
   print*, 'Reading sac state file: ', trim(state_infile)
 
-  ! format for input is one column, with no other information
-  open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
-  read(95,*) uztwc
-  read(95,*) uzfwc
-  read(95,*) lztwc
-  read(95,*) lzfsc
-  read(95,*) lzfpc
-  read(95,*) adimc
+  ! format for input is an unknown number of rows with 6 data columns
+  !   the first column is the datestring
+  do while(ios .ge. 0)
 
+    ! read each row and check to see if the date matches the initial state date
+    read(95,*,IOSTAT=ios) file_state_date_str, uztwc, uzfwc, lztwc, lzfsc, lzfpc, adimc
+
+    if(file_state_date_str == state_date_str) then
+      print *, '  -- found initial sac model state on ', state_date_str
+      close(unit=95)
+      return
+    end if
+
+  end do
   close(unit=95)
 
-  return
+  ! if you reach here without returning, quit -- the initial state date was not found
+  print*, 'ERROR:  sac init state not found in sac initial state file.  Looking for: ',state_date_str
+  print*, '  -- last state read was: ', file_state_date_str
+  print*, 'Stopping.  Check inputs!'
+  stop
+
 end subroutine read_sac_state
 
 ! ccccccccccccccccccccccccccccccc
