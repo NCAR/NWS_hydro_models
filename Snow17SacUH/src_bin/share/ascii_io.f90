@@ -1,4 +1,4 @@
-! A. Wood, Aug 2016:  These are all reconfigured to work with multi-HRU model setup
+! A. Wood, Aug 2016:  These subs reconfigured to work w/ multi-HRU model setup
 
 subroutine write_snow17_state(year,month,day,hour,cs,tprev,sim_length,curr_hru_id)
   use nrtype
@@ -168,7 +168,8 @@ subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
     ! read each row and check to see if the date matches the initial state date
     read (95,*,IOSTAT=ios) file_state_date_str, prior_tci(:)
 
-    if(file_state_date_str == state_date_str) then
+    !if(file_state_date_str == state_date_str) then
+    if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
       print *, '  -- found initial UH state on ', state_date_str
       print*, ' '
       close(unit=95)
@@ -186,7 +187,7 @@ subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
 
 end subroutine read_uh_state
 
-! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
 
 subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
   use nrtype
@@ -218,7 +219,8 @@ subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
     ! read each row and check to see if the date matches the initial state date
     read(95,*,IOSTAT=ios) file_state_date_str, tprev, cs(:)
 
-    if(file_state_date_str == state_date_str) then
+    ! if(file_state_date_str == state_date_str) then
+    if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
       print *, '  -- found initial snow state on ', state_date_str
       close(unit=95)
       return
@@ -235,7 +237,7 @@ subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
 
 end subroutine read_snow17_state
 
-! ccccccccccccccccccccccccccccccc
+! cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 subroutine read_sac_state(state_date_str, uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
   use nrtype
@@ -269,7 +271,10 @@ subroutine read_sac_state(state_date_str, uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,cu
     ! read each row and check to see if the date matches the initial state date
     read(95,*,IOSTAT=ios) file_state_date_str, uztwc, uzfwc, lztwc, lzfsc, lzfpc, adimc
 
-    if(file_state_date_str == state_date_str) then
+    !if(file_state_date_str == state_date_str) then
+    ! checks either for real date or special word identifying the state to use
+    !   this functionality facilitates ESP forecast initialization
+    if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
       print *, '  -- found initial sac model state on ', state_date_str
       close(unit=95)
       return
