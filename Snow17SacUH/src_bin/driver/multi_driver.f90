@@ -333,26 +333,14 @@ program multi_driver
       ! call DUAMEL(tci,1,unit_hydro,unit_shape,unit_scale,dtuh,sim_length+uh_length,&
       !               m,route_tci,k,ntau)  ORIG
 
-      if(warm_start_run > 0) then
-
-        call DUAMEL(expanded_tci, 1, unit_hydro, unit_shape(nh), unit_scale(nh), dtuh,&
+      call DUAMEL(expanded_tci, 1, unit_hydro, unit_shape(nh), unit_scale(nh), dtuh,&
                     sim_length+uh_length-1, m, route_tci, k, ntau, TOC_length) ! AWW          
                     ! should this be sim_length+uh_length*2-1?   AW
 
-        ! now reset route_tci (output variable) to correct time period 
-        !   trim off prior routing tci
-        route_tci(1:sim_length) = route_tci(uh_length:sim_length+uh_length-1)  
+      ! now reset route_tci (output variable) to correct time period, ie: 
+      !   trim off prior routing tci so that time index matches other output variables
+      route_tci(1:sim_length) = route_tci(uh_length:sim_length+uh_length-1)  
 
-      else
-        ! AW:  could also have this use expanded tci so as to make one call
-        call DUAMEL(tci, 1, unit_hydro, unit_shape(nh), unit_scale(nh), dtuh,&
-                    sim_length+uh_length-1, m, route_tci, k, ntau, TOC_length) !AWW
-
-
-        ! updated expanded_tci variable that is written to uh_state file
-        !expanded_tci(uh_length:sim_length+uh_length-1) = tci(1:sim_length)
-
-      end if
 
       !print*, 'TOC_length', TOC_length, 'days'
       if(TOC_length > uh_length) then
