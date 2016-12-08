@@ -92,7 +92,7 @@ module interfaces
       integer(I4B)	:: i
     end subroutine write_sac_state
 
-    subroutine write_uh_state(year,month,day,hour,tci,sim_length,uh_length,curr_hru_id)
+    subroutine write_uh_state(year,month,day,hour,expanded_tci,sim_length,uh_length,curr_hru_id)
       use nrtype
       use def_namelists, only: uh_state_out_root
       implicit none
@@ -102,12 +102,12 @@ module interfaces
       integer(I4B),dimension(:),intent(in)	:: month
       integer(I4B),dimension(:),intent(in)	:: day
       integer(I4B),dimension(:),intent(in)	:: hour
-      real(sp), dimension(:), intent(in) 	:: tci
+      real(sp), dimension(:), intent(in) 	:: expanded_tci
       integer(I4B), intent(in)		:: sim_length
       integer(I4B), intent(in)		:: uh_length
       !local variables
-      integer(I4B)	:: i
-      real(sp),allocatable,dimension(:)	:: out_tci  ! holds tci except for 1st uh_length records
+      !integer(I4B)	:: i
+      !real(sp),allocatable,dimension(:)	:: out_tci  ! holds tci except for 1st uh_length records
     end subroutine write_uh_state
 
     subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
