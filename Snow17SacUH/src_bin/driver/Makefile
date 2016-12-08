@@ -13,7 +13,7 @@
 #========================================================================
 
 # Define core directory below which everything resides
-F_MASTER_DIR = /home/andywood/proj/overtheloop/code/NWS_hydro_models/Snow17SacUH/src_bin
+F_MASTER_DIR = /home/hydrofcst/overtheloop/models/code/NWS_hydro_models/Snow17SacUH/src_bin/
 
 # Location of the compiled modules
 MOD_PATH = $(F_MASTER_DIR)/driver
@@ -78,12 +78,13 @@ calib_pgf77 = $(sac_77)
 #========================================================================
 
 # Define the Fortran Compilers
-#FC  = pgf90
-#FC77 = pgf77
+FC  = /opt/pgi-15.7/linux86-64/15.7/bin/pgf90
+FC77 = /opt/pgi-15.7/linux86-64/15.7/bin/pgf77
+
 #FC  = ifort
 #FC77 = ifort
-FC  = gfortran
-FC77 = gfortran
+#FC  = gfortran
+#FC77 = gfortran
 
 # Define the libraries and path to include files
 ifeq "$(FC)" "pgf90"
