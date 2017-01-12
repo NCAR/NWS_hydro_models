@@ -5,11 +5,12 @@ C
 c     A. Wood, 2016, modified so that function returns time of concentration length for the routing
 c                    this is important for initializing a forecast; also documented & formatted
 c
-      SUBROUTINE DUAMEL(Q,NU1,U1,UN1,UT,DT,N,M,QB,K,NTAU,TOC_length)
-      !SUBROUTINE DUAMEL(Q,NU1,U1,UN1,UT,DT,N,M,QB,K,NTAU)
+      SUBROUTINE DUAMEL(Q,NU1,U1,UN1,UT,DT,N,M,QB,K,NTAU,TOC_length)  ! AWW
+      !SUBROUTINE DUAMEL(Q,NU1,U1,UN1,UT,DT,N,M,QB,K,NTAU)   ! orig
       IMPLICIT REAL (A-H,O-Z)
       INTEGER A,B
-      REAL Q(N),QB(N),U1(1000) 
+      REAL Q(N),QB(N),U1(1000)
+
       integer TOC_length  ! AWW-2016 added based on Tom Hopson routine for estimating TOC for routing
 
       !      PRINT *,'DUAMEL'
@@ -24,7 +25,7 @@ c
       ! UT     : unit hydrograph scale parameter (for gamma dist)
       ! DT     : timestep of the UH function (in days or fractions thereof)
       ! N      : sim_length + uh_length ...ie length of U1
-      ! M      : 
+      ! M      : max UH length?
       ! QB     : routed flow vector
       ! K      : 
       ! NTAU   : 
