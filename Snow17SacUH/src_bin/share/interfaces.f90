@@ -163,7 +163,8 @@ module interfaces
     subroutine read_sac_params(param_name,n_hrus)
       use nrtype
       use def_namelists, only: uztwm,uzfwm,uzk,pctim,adimp,zperc,rexp, &
-			    lztwm,lzfsm,lzfpm,lzsk,lzpk,pfree,riva,side,rserv
+			    lztwm,lzfsm,lzfpm,lzsk,lzpk,pfree,riva,side,rserv,&
+                            peadj,pxadj
       !input variables
       character(len=1024),intent(in)	:: param_name
       integer(I4B),intent(in) :: n_hrus

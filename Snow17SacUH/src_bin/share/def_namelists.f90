@@ -42,7 +42,7 @@ module def_namelists
   real(dp), dimension(:), allocatable :: hru_area   ! sq-km, needed for combination & routing conv.
   real(sp), dimension(:), allocatable :: uztwm,uzfwm,uzk,pctim,adimp,zperc,rexp
   real(sp), dimension(:), allocatable :: lztwm,lzfsm,lzfpm,lzsk,lzpk,pfree
-  real(sp), dimension(:), allocatable :: riva,side,rserv
+  real(sp), dimension(:), allocatable :: riva,side,rserv,peadj,pxadj
 
   ! UH params in the UH param file
   real(sp), dimension(:), allocatable :: unit_shape,unit_scale  !unit hydrograph parameters

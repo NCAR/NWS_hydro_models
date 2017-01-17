@@ -376,7 +376,7 @@ subroutine read_sac_params(param_file_name,n_hrus)
   use nrtype
   use def_namelists, only: uztwm,uzfwm,uzk,pctim,adimp,zperc,rexp, &
 			lztwm,lzfsm,lzfpm,lzsk,lzpk,pfree,riva,side,rserv, &
-                        hru_area, hru_id
+                        hru_area, hru_id, peadj, pxadj
   implicit none
  
   !input variables
@@ -412,6 +412,8 @@ subroutine read_sac_params(param_file_name,n_hrus)
   allocate(riva(n_hrus))
   allocate(side(n_hrus))
   allocate(rserv(n_hrus))
+  allocate(peadj(n_hrus))
+  allocate(pxadj(n_hrus))
 
   print*, 'Reading Sac parameters'
 
@@ -485,6 +487,12 @@ subroutine read_sac_params(param_file_name,n_hrus)
         case('rserv')
           read(readline, *, iostat=ios) rserv
           n_params_read = n_params_read + 1
+        case('peadj')
+          read(readline, *, iostat=ios) peadj  ! peadj & pxadj are used by NWS to modify
+          n_params_read = n_params_read + 1    ! forcings before running models
+        case('pxadj')                          ! included here as sac params
+          read(readline, *, iostat=ios) pxadj  ! often used as calibration parameters in nwsrfs
+          n_params_read = n_params_read + 1
         case default
           print *, 'Parameter ',param,' not recognized in soil file'
           ! something weird here...doesn't break it but somehow enters here after last real read
@@ -496,8 +504,8 @@ subroutine read_sac_params(param_file_name,n_hrus)
   close(unit=50)
 
   ! quick check on completeness
-  if(n_params_read /= 18) then
-    print *, 'Only ',n_params_read, ' SAC params read, but need 18.  Quitting...'
+  if(n_params_read /= 20) then
+    print *, 'Only ',n_params_read, ' SAC params read, but need 20.  Quitting...'
     stop
   end if
   !print*, '  -------------------'

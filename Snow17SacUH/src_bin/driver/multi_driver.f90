@@ -25,6 +25,7 @@
 !                   of the write_state functions, and will seek a date that is one day before
 !                   the starting day of the run, since that contains end-of-day state values
 !   AWW-20161207: - fixed bug in uh_statefile write/read
+!   AWW-20170117: - added peadj and pxadj as sac parameters for model calibration
 ! 
 ! ====================================================================================
 
@@ -111,8 +112,8 @@ program multi_driver
   real(sp), dimension(:),allocatable :: raim
 
   ! atmospheric forcing variables
-  real(dp), dimension(:),allocatable :: tmin, tmax, precip, pet
-  real(dp), dimension(:),allocatable :: vpd, dayl, swdown ! used in pet calc if desired
+  real(dp), dimension(:),allocatable :: tmin, tmax, precip, pet, raw_precip, raw_pet
+  ! real(dp), dimension(:),allocatable :: vpd, dayl, swdown ! used in pet calc; not used currently
 
   ! derived forcing variables
   real(dp), dimension(:),allocatable :: tair
@@ -178,11 +179,13 @@ program multi_driver
       allocate(hour(sim_length))
       allocate(tmax(sim_length))
       allocate(tmin(sim_length))
-      allocate(vpd(sim_length))
-      allocate(dayl(sim_length))
-      allocate(swdown(sim_length))
-      allocate(precip(sim_length))
-      allocate(pet(sim_length))
+      ! allocate(vpd(sim_length))  ! not used now that PET supplied outside code
+      ! allocate(dayl(sim_length))
+      ! allocate(swdown(sim_length))
+      allocate(raw_precip(sim_length))  ! input values
+      allocate(precip(sim_length))      ! values after applying pxadj
+      allocate(raw_pet(sim_length))     ! input values
+      allocate(pet(sim_length))         ! values after applying peadj
       allocate(tair(sim_length))
   
       !sac-sma state variables
@@ -215,10 +218,15 @@ program multi_driver
     end if  ! end of IF case for allocating only when running the first simulation area
 
     ! read forcing data
-    call read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,hru_id(nh)) ! hour not used
+    call read_areal_forcing(year,month,day,hour,tmin,tmax,raw_precip,raw_pet,hru_id(nh)) ! hour not used
     tair = (tmax+tmin)/2.0_dp  ! calculate derived variable (mean air temp)
                                ! tmax & tmin were used for pet earlier, this is vestigial but ok
 
+    ! apply PEADJ and PXADJ (scaling the input values)
+    pet    = raw_pet * peadj(nh)
+    precip = raw_precip * pxadj(nh)
+
+    ! print run dates
     print*, '  start:',year(1),month(1),day(1)
     print*, '    end:',year(sim_length),month(sim_length),day(sim_length) 
 
