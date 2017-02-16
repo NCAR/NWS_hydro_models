@@ -61,6 +61,6 @@ module def_namelists
                           init_lzfpc,init_adimc,sac_param_file,snow17_param_file,uh_param_file, &
                           uh_state_in_root, warm_start_run, write_states, &
 			  snow_state_out_root,sac_state_out_root,snow_state_in_root, &
-			  sac_state_in_root, uh_state_out_root, elev, latitude, hru_id, hru_area
+			  sac_state_in_root, uh_state_out_root
   save
 end module
