@@ -113,19 +113,24 @@ DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(calib_DRIVER))
 # Define flags
 ifeq "$(FC)" "gfortran"
   FLAGS_DEBUG = -static -Wall -g -ffree-line-length-none
-  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
-  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
+  FLAGS77 = -O3 -fno-align-commons -ffree-line-length-none 
+  FLAGS = -O3 -fno-align-commons -ffree-line-length-none 
+  FLAGS2 = -O3 -fno-align-commons -ffree-line-length-none
+#  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
+#  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
 endif
 
 ifeq "$(FC)" "ifort"
   FLAGS_PROF = -static -debug -warn all -check all -FR -O0 -auto -WB -traceback -g -fltconsistency -fpe0
+  FLAGS_DEBUG = -static -debug -warn all -check all -FR -O0 -auto -WB -traceback -g -fltconsistency -fpe0
+  FLAGS77 = -O3 -f77rtl 
   FLAGS = -O3 -warn all -check all
   FLAGS2 = -O3 
-  FLAGS77 = -O3 -f77rtl 
 endif
 
 ifeq "$(FC)" "pgf90"
   FLAGS_PROF = -Bstatic -Mbackslash -g -Mchkptr -Mchkstk -Mpgicoff -Minform=inform -Ktrap=divz,inv -Mprof=lines,time
+  FLAGS_DEBUG = -Bstatic -Mbackslash -g -Mchkptr -Mchkstk -Mpgicoff -Minform=inform -Ktrap=divz,inv -Mprof=lines,time
   # FLAGS = -Mfreeform -O3 -Mbackslash -g -Mchkptr -Mchkstk -Mpgicoff -Minform=inform -Ktrap=divz,inv
   FLAGS = -O3 -r8 -Kieee
   FLAGS2 = -O3 -r8
