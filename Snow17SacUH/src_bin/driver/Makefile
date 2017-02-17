@@ -13,7 +13,7 @@
 #========================================================================
 
 # Define core directory below which everything resides
-F_MASTER_DIR = /home/hydrofcst/SHARP/models/code/NWS_hydro_models/Snow17SacUH/src_bin/
+F_MASTER_DIR = /home/andywood/proj/overtheloop/models/code/NWS_hydro_models/Snow17SacUH/src_bin/
 
 # Location of the compiled modules
 MOD_PATH = $(F_MASTER_DIR)/driver
@@ -67,24 +67,19 @@ calib_sac_77= \
 		duamel.f 
 sac_77 = $(patsubst %, $(sac_dir)/%, $(calib_sac_77))
 
-
-# ... and stitch it all together...
-calib_pgf90 = $(UTIL)
-calib_pgf90_2 = $(snow19)
-calib_pgf77 = $(sac_77)
-
 #========================================================================
 # PART 2: Define the libraries, driver programs, and executables
 #========================================================================
 
 # Define the Fortran Compilers
-FC  = /opt/pgi-15.7/linux86-64/15.7/bin/pgf90
-FC77 = /opt/pgi-15.7/linux86-64/15.7/bin/pgf77
+#FC  = /opt/pgi-15.7/linux86-64/15.7/bin/pgf90
+#FC77 = /opt/pgi-15.7/linux86-64/15.7/bin/pgf77
 
 #FC  = ifort
 #FC77 = ifort
-#FC  = gfortran  # DO NOT USE GFORTRAN UNTIL BUG IS FOUND
-#FC77 = gfortran
+
+FC  = gfortran  # DO NOT USE GFORTRAN UNTIL BUG IS FOUND
+FC77 = gfortran
 
 # Define the libraries and path to include files
 ifeq "$(FC)" "pgf90"
@@ -112,12 +107,12 @@ DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(calib_DRIVER))
 
 # Define flags
 ifeq "$(FC)" "gfortran"
-  FLAGS_DEBUG = -static -Wall -g -ffree-line-length-none
-  FLAGS77 = -O3 -fno-align-commons -ffree-line-length-none 
-  FLAGS = -O3 -fno-align-commons -ffree-line-length-none 
-  FLAGS2 = -O3 -fno-align-commons -ffree-line-length-none
-#  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
-#  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
+  FLAGS_DEBUG = -static -Wall -g -ffixed-line-length-none
+  FLAGS77 = -O3 -fno-align-commons -ffixed-line-length-none
+  FLAGS = -O3 -fno-align-commons -ffixed-line-length-none
+  FLAGS2 = -O3 -fno-align-commons -ffixed-line-length-none
+#  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -fixed-line-length-none
+#  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -fixed-line-length-none
 endif
 
 ifeq "$(FC)" "ifort"
@@ -158,17 +153,16 @@ check:
 
 # compile calibration code
 compile_calib:
-	$(FC77) $(FLAGS77) -c $(calib_pgf77) $(INC77)
-	$(FC) $(FLAGS2) -c $(calib_pgf90_2) $(INC)
-	$(FC) $(FLAGS) -c $(calib_pgf90) $(DRIVER) \
+	$(FC77) $(FLAGS77) -c $(sac_77) $(INC77)
+	$(FC) $(FLAGS2) -c $(snow19) $(INC)
+	$(FC) $(FLAGS) -c $(UTIL) $(DRIVER) \
 	$(INC)
 
 compile_debug:
-	$(FC77) $(FLAGS77) -g -fcheck=all -c $(calib_pgf77) $(INC77)
-	$(FC) $(FLAGS2) -g -fcheck=all -c $(calib_pgf90_2) $(INC)
-	$(FC) $(FLAGS) -g -fcheck=all -c $(calib_pgf90) $(DRIVER) \
+	$(FC77) $(FLAGS77) -g -fcheck=all -c $(sac_77) $(INC77)
+	$(FC) $(FLAGS2) -g -fcheck=all -c $(snow19) $(INC)
+	$(FC) $(FLAGS) -g -fcheck=all -c $(UTILS) $(DRIVER) \
 	$(INC)
-
 
 # link routines
 link:
@@ -177,5 +171,5 @@ link:
 
 # Remove object files
 clean:
-						rm -f *.o
-						rm -f *.mod
+	rm -f *.o
+	rm -f *.mod

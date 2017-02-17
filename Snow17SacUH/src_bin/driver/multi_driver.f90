@@ -264,7 +264,7 @@ program multi_driver
       call read_snow17_state(state_date_str, cs, tprev, hru_id(nh))
       call read_sac_state(state_date_str, uztwc_sp, uzfwc_sp, lztwc_sp, lzfsc_sp, lzfpc_sp,&
                             adimc_sp, hru_id(nh))
-      call read_uh_state(state_date_str, prior_tci, uh_length, hru_id(nh))
+      call read_uh_state(state_date_str, prior_tci, hru_id(nh))
       ! pre-pend TCI from prior simulation to expanded tci that will get routed
       expanded_tci(1:uh_length-1) = prior_tci(2:uh_length)  ! 1st value not used
 
@@ -509,7 +509,8 @@ program multi_driver
 
   if(routing_flag == 1) then
 
-    write(125,'(A)') 'year mo dy hr tair pcp pcp*scf swe raim pet eta uztwc uzfwc lztwc lzfsc lzfpc adimc sim_runoff sim_flow_mmd sim_flow_cfs'
+    write(125,'(A)') &
+      & 'year mo dy hr tair pcp pcp*scf swe raim pet eta uztwc uzfwc lztwc lzfsc lzfpc adimc sim_runoff sim_flow_mmd sim_flow_cfs'
     do i = 1,sim_length
       write(125,33) year(i),month(i),day(i),hour(i),tair_comb(i),precip_comb(i),precip_scf_comb(i),&
                        sneqv_comb(i)*1000.,raim_comb(i),pet_comb(i),eta_comb(i),uztwc_comb(i),uzfwc_comb(i),&
@@ -518,7 +519,7 @@ program multi_driver
     end do
 
   else  
-    ! doesn't have routing (header and data have fewer 
+    ! doesn't have routing (header and data have fewer fields)
     write(125,'(A)') 'year mo dy hr tair pcp pcp*scf swe raim pet eta uztwc uzfwc lztwc lzfsc lzfpc adimc sim_runoff'
     do i = 1,sim_length
       write(125,34) year(i),month(i),day(i),hour(i),tair_comb(i),precip_comb(i),precip_scf_comb(i),&

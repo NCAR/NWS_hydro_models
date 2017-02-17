@@ -127,7 +127,7 @@ end subroutine write_uh_state
 
 ! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
 
-subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
+subroutine read_uh_state(state_date_str, prior_tci, curr_hru_id)
   ! A.Wood, 2016 -- just read prior (uh_length) values ending at timestep-1 for tci
   !   includes ability to read a keyword in state file to identify desired state
   !   rather than match the date
@@ -139,7 +139,6 @@ subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
   !input variable
   character(len=10), intent(in) :: state_date_str  ! AWW string to match date in input states
   character(len=20), intent(in) :: curr_hru_id	! HRU extension for state fname
-  integer(I4B), intent(in)	:: uh_length
 
   !output variables
   real(sp), dimension(:), intent(out) 	:: prior_tci
