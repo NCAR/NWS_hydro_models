@@ -510,7 +510,7 @@ program multi_driver
   if(routing_flag == 1) then
 
     write(125,'(A)') 'year mo dy hr tair pcp pcp*scf swe raim pet eta&
-          &uztwc uzfwc lztwc lzfsc lzfpc adimc sim_runoff sim_flow_mmd&
+          & uztwc uzfwc lztwc lzfsc lzfpc adimc sim_runoff sim_flow_mmd&
          & sim_flow_cfs'
     do i = 1,sim_length
       write(125,33) year(i),month(i),day(i),hour(i),tair_comb(i),precip_comb(i),precip_scf_comb(i),&
