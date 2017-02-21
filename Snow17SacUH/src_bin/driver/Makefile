@@ -123,9 +123,9 @@ DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(calib_DRIVER))
 # Define flags
 ifeq "$(FC)" "gfortran"
   # do not use -fdefault-real-8 since this will change the outcomes
-  FLAGS_DEBUG = -static -Wall -g -fixed-line-length-none
-  FLAGS = -O3 -fno-align-commons -fixed-line-length-none
-  FLAGS2 = -O3 -fno-align-commons -fixed-line-length-none
+  FLAGS_DEBUG = -static -Wall -g -ffixed-line-length-none
+  FLAGS = -O3 -fno-align-commons -ffixed-line-length-none
+  FLAGS2 = -O3 -fno-align-commons -ffixed-line-length-none
 endif
 
 ifeq "$(FC)" "ifort"
@@ -144,7 +144,7 @@ endif
 
 ifeq "$(FC77)" "gfortran"
   # do not use -fdefault-real-8 since this will change the outcomes
-  FLAGS77 = -O3 -fno-align-commons -fixed-line-length-none
+  FLAGS77 = -O3 -fno-align-commons -ffixed-line-length-none
 endif
 
 ifeq "$(FC77)" "ifort"
