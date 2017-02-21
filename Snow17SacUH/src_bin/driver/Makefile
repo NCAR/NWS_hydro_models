@@ -18,7 +18,7 @@
 #========================================================================
 
 # Define core directory below which everything resides
-F_MASTER_DIR = NWS_hydro_models/Snow17SacUH/src_bin/
+F_MASTER_DIR = /home/hydrofcst/SHARP/models/code/NWS_hydro_models/Snow17SacUH/src_bin/
 
 # Location of the compiled modules
 MOD_PATH = $(F_MASTER_DIR)/driver
