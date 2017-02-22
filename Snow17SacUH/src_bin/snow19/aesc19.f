@@ -20,9 +20,9 @@ C      print *,'1',twe,accmax
 C      print *,'2',ai,twe,accmax
       IF(ACCMAX.GT.SI)AI=SI
       IF (AEADJ.GT.0.0) AI=AEADJ
-C      print *,'3',ai,aeadj,twe,accmax,sb,sbws,tiny
+C      print *,'3',ai,aeadj,twe,accmax,sb,sbws
       IF(TWE.GE.AI) GO TO 105
-      IF(TWE.LE.SB+tiny) GO TO 110
+      IF(TWE.LE.SB) GO TO 110
       IF(TWE.GE.SBWS) GO TO 115
       AESC=SBAESC+((1.0-SBAESC)*((TWE-SB)/(SBWS-SB)))
       GO TO 120
