@@ -6,7 +6,7 @@
 #  A. Wood, Dec 2015, updating for model that uses external PET & gfortran comp. 
 #           Jan 2016, renamed some subroutines, replaced several for code
 #                     that now runs in distributed fashion
-#           Aug 2015, major overhaul of code but makefile is similar
+#           Aug 2015, major overhaul of code, updated makefile
 #
 #========================================================================
 # PART 0: Define directory paths
@@ -83,7 +83,7 @@ FC77 = /opt/pgi-15.7/linux86-64/15.7/bin/pgf77
 
 #FC  = ifort
 #FC77 = ifort
-#FC  = gfortran
+#FC  = gfortran  # DO NOT USE GFORTRAN UNTIL BUG IS FOUND
 #FC77 = gfortran
 
 # Define the libraries and path to include files
@@ -144,8 +144,8 @@ endif
 
 # -- Compile --
 
- all: compile_calib link clean 
- # all: compile_debug link 
+all: compile_calib link clean 
+debug: compile_debug link 
 
 check:
 	echo test

@@ -10,10 +10,8 @@
 !     added state file restarts and outputs
 !     cleaned up and added documention
 ! 
-!   AWW-20160121:  
-!     made to run subareas in loop so that multiple outputs could be combined
-!       -- but each still required its own namelist; total worked off a control file
-!
+!   AWW-20160121:  - made to run subareas in loop so that multiple outputs could be combined
+!                    -- but each still required its own namelist; and it used a control file
 !   AWW-20160823: - MAJOR CHANGES to make the code work like a typical stand-alone model
 !                 - internal PET approach removed, forcings now expect prcp, tmax, tmin, PET
 !                     static parameters removed from header of forcing files; they're now tables
@@ -23,10 +21,10 @@
 !                 - HRUs are internally combined and written out into a basin-total file
 !                 - streamflow read/write functionality removed
 !                 - improved messaging about run details
-! 
 !   AWW-20161111: - changed the way state files are read - now can read the row format output
 !                   of the write_state functions, and will seek a date that is one day before
 !                   the starting day of the run, since that contains end-of-day state values
+!   AWW-20161207: - fixed bug in uh_statefile write/read
 ! 
 ! ====================================================================================
 
@@ -56,7 +54,7 @@ program multi_driver
 
   integer      :: nh           ! AWW index for looping through areas
   real(dp)     :: total_area   ! (sqkm) AWW needed for combining outputs
-  integer(I4B) :: i,ntau,k,m
+  integer(I4B) :: i, ntau, k, m
   integer(I4B) :: sim_length   ! length of simulation (days)
   real(sp)     :: dtuh	       ! for unit hydrograph
 
@@ -87,7 +85,7 @@ program multi_driver
   integer(I4B)  :: TOC_length ! DUAMEL.f new return variable -- A.Wood Feb 2016
 
   ! arrays for using state warm start with unit hydrograph
-  real(sp),dimension(:),allocatable	:: prior_tci,tmp_tci ! AWW added
+  real(sp),dimension(:),allocatable	:: prior_tci, expanded_tci ! AWW added
 
   ! ==== ALLOCATABLE VARIABLES ====
 
@@ -100,30 +98,32 @@ program multi_driver
   real(dp),dimension(:),allocatable     :: adimc_dp, adimc_comb
 
   ! sac-sma output variables and routed flow
-  real(sp), dimension(:),allocatable	:: qs,qg,eta,tci,route_tci
-  real(sp), dimension(:),allocatable	:: eta_comb,tci_comb,route_tci_comb ! AWW combined vars
-  real(sp), dimension(:),allocatable	:: route_tci_cfs ! AWW comb. var, convert mm/d to cfs while data are handy
+  real(sp), dimension(:),allocatable	:: qs, qg, eta, tci, route_tci
 
   ! snow-17 output variables  single precision
   real(sp), dimension(:),allocatable    :: snowh, sneqv, snow !output variables for snow-17
-  real(sp), dimension(:),allocatable    :: sneqv_comb ! AWW ditto, combined vars
 
   ! date variables
   integer, dimension(:),allocatable :: year, month, day, hour
   integer(I4B)                      :: state_year, state_month, state_day
 
   ! precip/snowmelt inputs to Sac from Snow17
-  real(sp),dimension(:),allocatable :: raim
-  real(sp),dimension(:),allocatable :: raim_comb  ! AWW combined vars
+  real(sp), dimension(:),allocatable :: raim
 
   ! atmospheric forcing variables
-  real(dp), dimension(:),allocatable :: tmin,tmax,precip, pet
-  real(dp), dimension(:),allocatable :: vpd,dayl,swdown ! used in pet calc if desired
+  real(dp), dimension(:),allocatable :: tmin, tmax, precip, pet
+  real(dp), dimension(:),allocatable :: vpd, dayl, swdown ! used in pet calc if desired
 
   ! derived forcing variables
-  real(dp), dimension(:),allocatable :: precip_comb, precip_scf_comb ! AWW combined vars
   real(dp), dimension(:),allocatable :: tair
-  real(dp), dimension(:),allocatable :: pet_comb,tair_comb  ! AWW combined vars
+
+  ! various other combined variables (aggregating multiple basins zones)
+  real(sp), dimension(:),allocatable	:: eta_comb, tci_comb, route_tci_comb ! AWW combined vars
+  real(sp), dimension(:),allocatable	:: route_tci_cfs ! AWW convert mm/d to cfs given basin areas
+  real(sp), dimension(:),allocatable    :: sneqv_comb ! AWW ditto, combined vars
+  real(sp), dimension(:),allocatable :: raim_comb  ! AWW combined vars
+  real(dp), dimension(:),allocatable :: precip_comb, precip_scf_comb ! AWW combined vars
+  real(dp), dimension(:),allocatable :: pet_comb, tair_comb  ! AWW combined vars
 
   ! =======  CODE starts below =====================================================================
 
@@ -136,7 +136,7 @@ program multi_driver
     i = i + 1
   end do
 
-  ! set model timestep (DO NOT CHANGE FROM 86400 )
+  ! set model timestep (DO NOT CHANGE in this daily modeling code version )
   dt = 86400 ! (s) model timestep (86400 seconds = 1 day)
 
   ! read namelist file to get info on the current simulation areas
@@ -208,21 +208,19 @@ program multi_driver
       allocate(tprev_states(sim_length)) ! ditto
 
       ! UH routing variables
-      allocate(tmp_tci(sim_length+uh_length))   ! input -- may have to accomodate spinup routing
-      allocate(route_tci(sim_length+uh_length)) ! output -- may have to accomodate spinup routing
-      allocate(prior_tci(uh_length))            ! related (for state file read)
+      allocate(expanded_tci(sim_length+uh_length-1))   ! routing state, includes spinup-period
+      allocate(route_tci(sim_length+uh_length-1)) ! routing output, also includes spinup routing
+      allocate(prior_tci(uh_length))              ! related (for state file read)
 
     end if  ! end of IF case for allocating only when running the first simulation area
 
     ! read forcing data
-    call read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,hru_id(nh))  ! hour not needed
-    tair = (tmax+tmin)/2.0_dp  ! calculate derived variable
+    call read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,hru_id(nh)) ! hour not used
+    tair = (tmax+tmin)/2.0_dp  ! calculate derived variable (mean air temp)
+                               ! tmax & tmin were used for pet earlier, this is vestigial but ok
 
     print*, '  start:',year(1),month(1),day(1)
     print*, '    end:',year(sim_length),month(sim_length),day(sim_length) 
-
-    ! BUG?:  for some reason only works if 2nd print appears, otherwise year month day vars get corrupted
-    !       implies a memory leak somewhere (haven't found) -- this problem may be gone
 
     ! ================== RUN models for huc_area! ==========================================
   
@@ -241,6 +239,9 @@ program multi_driver
       cs(1)    = init_swe   ! AWW: just initialize first/main component of SWE (model 'WE')
       cs(2:19) = 0          !      set the rest to zero
       tprev    = 0          ! AWW ADDED
+      ! AWW: initialize prior part of routing tci state (a uh_length-1 long period) with zeros
+      ! this gets used in writing states for runs shorter than uh_length
+      expanded_tci(1:uh_length-1) = 0.0
 
     else if(warm_start_run .gt. 0) then
       ! we *ARE* warm starting from a state file
@@ -252,9 +253,13 @@ program multi_driver
       ! create string that will be matched in state file
       write(state_date_str,'(I0.4,I0.2,I0.2,I0.2)') state_year,state_month,state_day,hour(1)
   
-      call read_snow17_state(state_date_str,cs,tprev,hru_id(nh))
-      call read_sac_state(state_date_str,uztwc_sp,uzfwc_sp,lztwc_sp,lzfsc_sp,lzfpc_sp,adimc_sp,hru_id(nh))
-      call read_uh_state(state_date_str,prior_tci,uh_length,hru_id(nh))
+      call read_snow17_state(state_date_str, cs, tprev, hru_id(nh))
+      call read_sac_state(state_date_str, uztwc_sp, uzfwc_sp, lztwc_sp, lzfsc_sp, lzfpc_sp,&
+                            adimc_sp, hru_id(nh))
+      call read_uh_state(state_date_str, prior_tci, uh_length, hru_id(nh))
+      ! pre-pend TCI from prior simulation to expanded tci that will get routed
+      expanded_tci(1:uh_length-1) = prior_tci(2:uh_length)  ! 1st value not used
+
     endif
   
     ! =============== START SIMULATION TIME LOOP =====================================
@@ -308,33 +313,34 @@ program multi_driver
     ! ============ end simulation time loop ====================
   
     ! ============ now route full runoff timeseries using UH =========================
+
+    ! add simulation tci to expanded tci timeseries that includes warm up is supplied
+    expanded_tci(uh_length:sim_length+uh_length-1) = tci(1:sim_length)
+
+    ! calculate some routing model parameters
     dtuh = real(dt/sec_day)
     if (unit_shape(nh) <= 0.0 .and. unit_scale(nh) <= 0.0) then
       k = 0
       m = 1
     else
-      k = 1      ! 
-      m = 1000   ! max UH length
+      k = 1      ! ?
+      m = 1000   ! max UH length (could be set elsewhere)
     end if
-    ntau = 0
+    ntau = 0  ! ?
   
     ! ==== if routing params are non-trivial, then call unit hydrograph routine
     if(routing_flag == 1) then
-      ! call DUAMEL(tci,1,unit_hydro,unit_shape,unit_scale,dtuh,sim_length+uh_length,m,route_tci,k,ntau)
+      ! call DUAMEL(tci,1,unit_hydro,unit_shape,unit_scale,dtuh,sim_length+uh_length,&
+      !               m,route_tci,k,ntau)  ORIG
 
-      if(warm_start_run > 0) then
+      call DUAMEL(expanded_tci, 1, unit_hydro, unit_shape(nh), unit_scale(nh), dtuh,&
+                    sim_length+uh_length-1, m, route_tci, k, ntau, TOC_length) ! AWW          
+                    ! should this be sim_length+uh_length*2-1?   AW
 
-        ! first, pre-pend TCI from prior simulation to TCI, then rout, and reset routed flow to correct period
-        tmp_tci(1:uh_length) = prior_tci  
-        tmp_tci(uh_length+1:sim_length+uh_length) = tci(1:sim_length)
-        call DUAMEL(tmp_tci,1,unit_hydro,unit_shape(nh),unit_scale(nh),dtuh,sim_length+uh_length,&
-                    m,route_tci,k,ntau,TOC_length) ! AWW          
-        route_tci(1:sim_length) = route_tci(uh_length+1:sim_length+uh_length)  ! reset route_tci to correct time period
+      ! now reset route_tci (output variable) to correct time period, ie: 
+      !   trim off prior routing tci so that time index matches other output variables
+      route_tci(1:sim_length) = route_tci(uh_length:sim_length+uh_length-1)  
 
-      else
-        call DUAMEL(tci,1,unit_hydro,unit_shape(nh),unit_scale(nh),dtuh,sim_length+uh_length,&
-                    m,route_tci,k,ntau,TOC_length) !AWW
-      end if
 
       !print*, 'TOC_length', TOC_length, 'days'
       if(TOC_length > uh_length) then
@@ -383,14 +389,16 @@ program multi_driver
     ! === write out STATE FILES for snow17, sac and uh if needed ===
     if(write_states > 0) then
       call write_snow17_state(year,month,day,hour,cs_states,tprev_states,sim_length,hru_id(nh))
-      call write_sac_state(year,month,day,hour,uztwc_dp,uzfwc_dp,lztwc_dp,lzfsc_dp,lzfpc_dp,adimc_dp,sim_length,hru_id(nh))
-      call write_uh_state(year,month,day,hour,tci,sim_length,uh_length,hru_id(nh))
+      call write_sac_state(year, month, day, hour, uztwc_dp, uzfwc_dp, lztwc_dp, &
+                           lzfsc_dp, lzfpc_dp, adimc_dp, sim_length, hru_id(nh))
+      ! call write_uh_state(year,month,day,hour,tci,sim_length,uh_length,hru_id(nh))
+      call write_uh_state(year,month,day,hour,expanded_tci,sim_length,uh_length,hru_id(nh))
     end if
 
     ! ==== AWW store/add single simulation area timeseries ====
     if(nh == 1) then
 
-      ! first area:  allocate combination output variables before first use
+      ! first area:  allocate combination output variables before first use (if any)
       allocate(tair_comb(sim_length))
       allocate(precip_comb(sim_length))
       allocate(precip_scf_comb(sim_length))
@@ -404,10 +412,10 @@ program multi_driver
       allocate(lzfsc_comb(sim_length))
       allocate(lzfpc_comb(sim_length))
       allocate(adimc_comb(sim_length))
-      allocate(tci_comb(sim_length+uh_length))
+      allocate(tci_comb(sim_length))
       if(routing_flag == 1) then
-        allocate(route_tci_comb(sim_length+uh_length))
-        allocate(route_tci_cfs(sim_length+uh_length))
+        allocate(route_tci_comb(sim_length))
+        allocate(route_tci_cfs(sim_length))
       end if
 
       ! store current area variable multiplied by area (in sqkm)
@@ -427,7 +435,7 @@ program multi_driver
       tci_comb        = tci * hru_area(nh)
       total_area      = hru_area(nh)  ! initialize on first area
       if(routing_flag == 1) then
-        route_tci_comb  = route_tci * hru_area(nh)
+        route_tci_comb  = route_tci(1:sim_length) * hru_area(nh)
       end if
 
     else       ! not first area, so add to summary variables already started
@@ -449,7 +457,7 @@ program multi_driver
       tci_comb        = tci_comb + tci * hru_area(nh)
       total_area      = total_area + hru_area(nh)
       if(routing_flag == 1) then
-        route_tci_comb  = route_tci_comb + route_tci * hru_area(nh)
+        route_tci_comb  = route_tci_comb + route_tci(1:sim_length) * hru_area(nh)
       end if 
     end if
 

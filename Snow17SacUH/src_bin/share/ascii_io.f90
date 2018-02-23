@@ -1,4 +1,4 @@
-! A. Wood, Aug 2016:  These subs reconfigured to work w/ multi-HRU model setup
+! A. Wood, Aug 2016:  These are all reconfigured to work with multi-HRU model setup
 
 subroutine write_snow17_state(year,month,day,hour,cs,tprev,sim_length,curr_hru_id)
   use nrtype
@@ -81,10 +81,10 @@ end subroutine write_sac_state
 
 ! cccccccccccccccccccccccccccccccccccccccccc
 
-subroutine write_uh_state(year,month,day,hour,tci,sim_length,uh_length,curr_hru_id)
+subroutine write_uh_state(year,month,day,hour,expanded_tci,sim_length,uh_length,curr_hru_id)
   ! A.Wood, 2016 -- this routine writes out TCI (total channel input) for the 
   !   UH_LENGTH period preceding the first timestep of the simulation
-  !   When read in, it is concatenated with the simulation TCI to initialize 
+  !   When it is read in, it is concatenated with the simulation TCI to initialize 
   !   the routing model
   use nrtype
   use def_namelists, only: uh_state_out_root
@@ -96,38 +96,31 @@ subroutine write_uh_state(year,month,day,hour,tci,sim_length,uh_length,curr_hru_
   integer(I4B),dimension(:),intent(in)	:: month
   integer(I4B),dimension(:),intent(in)	:: day
   integer(I4B),dimension(:),intent(in)	:: hour
-  real(sp), dimension(:), intent(in) 	:: tci
+  real(sp), dimension(:), intent(in) 	:: expanded_tci
   integer(I4B), intent(in)		:: sim_length
   integer(I4B), intent(in)		:: uh_length
 
   !local variables
   integer(I4B)	:: i
-  real(sp),allocatable,dimension(:)	:: out_tci  ! holds tci except for 1st uh_length records
   character(len = 480) :: state_outfile
 
   ! make state input filename
   state_outfile = trim(uh_state_out_root) // trim(curr_hru_id)
 
-  ! pad uh_length-1 period prior to tci timeseries with zeros (since no other data)
-  allocate(out_tci(uh_length-1+sim_length))
-  out_tci(1:uh_length-1) = 0.0
-  out_tci(uh_length:sim_length+uh_length-1) = tci
-
-  44 FORMAT(I0.4, 3(I0.2), 1000(F20.12))  ! big enough to separate fields
   open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
   print*, 'Writing UH state file: ', trim(state_outfile)
   print*, ' '
 
-  ! each day, writes out uh_length-1 values preceding the current day & also the current day
-  ! reasoning is that the other states are for the END of the period, so one would be initializing 
-  ! a simulation or forecast starting the following period (or day)
+  ! for each tstep, write out (uh_length-1) values before the current tstep, + the current tstep
+  ! reasoning: all state files are written for the END of timestep, so by grabbing a timestep's
+  ! state, one is initializing a simulation starting the following timestep (eg, day)
 
+  44 FORMAT(I0.4, 3(I0.2), 1000(F20.12))  ! big enough to separate fields
   do i = 1,sim_length
-    write(95,44) year(i),month(i),day(i),hour(i),out_tci(i:i+uh_length-1)
+    write(95,44) year(i),month(i),day(i),hour(i),expanded_tci(i:i+uh_length-1)
   enddo
 
   close(unit=95)
-  deallocate(out_tci)
 
   return
 end subroutine write_uh_state
@@ -135,9 +128,9 @@ end subroutine write_uh_state
 ! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
 
 subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
-  ! A.Wood, 2016 -- just read prior uh_length + current value for tci
-  !   Could read whole output state timeseries if date given to select current init,
-  !   but for now let's keep that as a pre-process
+  ! A.Wood, 2016 -- just read prior (uh_length) values ending at timestep-1 for tci
+  !   includes ability to read a keyword in state file to identify desired state
+  !   rather than match the date
 
   use nrtype
   use def_namelists, only: uh_state_in_root
@@ -163,12 +156,15 @@ subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
 
   ! format for input is an unknown number of rows with uh_length+1 columns
   !   the first column is the datestring, with no other information
+  !   note, only the data values 2:uh_length will get used, since the next
+  !   routing will include the first new day of the simulation
   do while(ios .ge. 0)
 
     ! read each row and check to see if the date matches the initial state date
     read (95,*,IOSTAT=ios) file_state_date_str, prior_tci(:)
 
-    !if(file_state_date_str == state_date_str) then
+    ! checks either for real date or special word identifying the state to use
+    !   this functionality facilitates ESP forecast initialization
     if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
       print *, '  -- found initial UH state on ', state_date_str
       print*, ' '
@@ -187,7 +183,7 @@ subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
 
 end subroutine read_uh_state
 
-! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
+! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
 
 subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
   use nrtype
@@ -219,7 +215,8 @@ subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
     ! read each row and check to see if the date matches the initial state date
     read(95,*,IOSTAT=ios) file_state_date_str, tprev, cs(:)
 
-    ! if(file_state_date_str == state_date_str) then
+    ! checks either for real date or special word identifying the state to use
+    !   this functionality facilitates ESP forecast initialization
     if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
       print *, '  -- found initial snow state on ', state_date_str
       close(unit=95)
@@ -237,7 +234,7 @@ subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
 
 end subroutine read_snow17_state
 
-! cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+! ccccccccccccccccccccccccccccccc
 
 subroutine read_sac_state(state_date_str, uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
   use nrtype
@@ -271,7 +268,6 @@ subroutine read_sac_state(state_date_str, uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,cu
     ! read each row and check to see if the date matches the initial state date
     read(95,*,IOSTAT=ios) file_state_date_str, uztwc, uzfwc, lztwc, lzfsc, lzfpc, adimc
 
-    !if(file_state_date_str == state_date_str) then
     ! checks either for real date or special word identifying the state to use
     !   this functionality facilitates ESP forecast initialization
     if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
