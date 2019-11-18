@@ -18,7 +18,7 @@
 #========================================================================
 
 # Define core directory below which everything resides
-F_MASTER_DIR = /home/hydrofcst/SHARP/models/code/NWS_hydro_models/Snow17SacUH/src_bin/
+F_MASTER_DIR = /home/hydrofcst/SHARP/models/nws/code/NWS_hydro_models/Snow17SacUH/src_bin/
 
 # Location of the compiled modules
 MOD_PATH = $(F_MASTER_DIR)/driver
@@ -32,10 +32,10 @@ EXE = $(F_MASTER_DIR)/Snow17SacUH.exe
 # DO NOT SPECIFY the full path to the executable here. You can do so below
 #FC  = pgf90
 #FC77 = pgf77
-#FC  = ifort
-#FC77 = ifort
-FC  = gfortran
-FC77 = gfortran
+FC  = ifort
+FC77 = ifort
+#FC  = gfortran
+#FC77 = gfortran
 
 # Define the Fortran Compiler executable
 # This is not used in the if statements in this makefile, but simply to do
@@ -43,10 +43,10 @@ FC77 = gfortran
 # MAKE SURE this is consistent with the compiler type defined above
 #FCEXE = /opt/pgi-15.7/linux86-64/15.7/bin/pgf90
 #FC77EXE = /opt/pgi-15.7/linux86-64/15.7/bin/pgf77
-#FCEXE  = ifort
-#FC77EXE = ifort
-FCEXE  = gfortran
-FC77EXE = gfortran
+FCEXE  = ifort
+FC77EXE = ifort
+#FCEXE  = gfortran
+#FC77EXE = gfortran
 
 #========================================================================
 # PART 1: Assemble all of the various sub-routines
@@ -67,7 +67,7 @@ calib_UTIL= \
 		read_namelist.f90 \
 		ascii_io.f90 \
 		day_of_year.f90 \
-		sfc_pressure.f90 
+		sfc_pressure.f90
 UTIL = $(patsubst %, $(share_dir)/%, $(calib_UTIL))
 
 # snow-19 code (fortran 90, different options)
@@ -91,7 +91,7 @@ snow19 = $(patsubst %, $(snow19_dir)/%, $(calib_snow19))
 calib_sac_77= \
 		sac1.f \
 		ex_sac1.f \
-		duamel.f 
+		duamel.f
 sac_77 = $(patsubst %, $(sac_dir)/%, $(calib_sac_77))
 
 #========================================================================
@@ -101,13 +101,13 @@ sac_77 = $(patsubst %, $(sac_dir)/%, $(calib_sac_77))
 # Define the libraries and path to include files
 ifeq "$(FC)" "pgf90"
  LOCL_PATH = /usr/local
- LIB = -L$(LOCL_PATH)/lib 
+ LIB = -L$(LOCL_PATH)/lib
  INC = -I ./
 endif
 
 ifeq "$(FC77)" "pgf77"
  LOCL_PATH = /usr/local
- LIB77 = -L$(LOCL_PATH)/lib 
+ LIB77 = -L$(LOCL_PATH)/lib
  INC77 = -I ./
 endif
 
@@ -159,8 +159,8 @@ endif
 
 # -- Compile --
 
-all: compile_calib link clean 
-debug: compile_debug link 
+all: compile_calib link clean
+debug: compile_debug link
 
 check:
 	echo test
@@ -181,7 +181,7 @@ compile_debug:
 
 # link routines
 link:
-	$(FC) -fPIC -I./ $(LIB) -o $(EXE) *.o 
+	$(FC) -fPIC -I./ $(LIB) -o $(EXE) *.o
 
 # Remove object files
 clean:
